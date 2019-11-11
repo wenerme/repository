@@ -1,5 +1,8 @@
 # Repository
 
+* CDN Url https://repo.wener.me/
+* Raw Url https://raw.githubusercontent.com/wenerme/repository/master
+
 ## Alpine
 * Packages not in mainline version or version is outdated
 
@@ -12,8 +15,8 @@ ansible-playbook adhoc.yaml -e 'role=dev task=builder-create facts=true host_dat
 ansible-playbook adhoc.yaml -e 'task=wener-repo' -l myhost
 
 # Or manully setup repo
-(cd /etc/apk/keys; sudo curl -LO https://raw.githubusercontent.com/wenerme/repository/master/alpine/wenermail@gmail.com-5dc8c7cd.rsa.pub )
-echo https://raw.githubusercontent.com/wenerme/repository/master/alpine/v3.10/community | sudo tee -a /etc/apk/repositories
+(cd /etc/apk/keys; sudo curl -LO https://repo.wener.me/alpine/wenermail@gmail.com-5dc8c7cd.rsa.pub )
+echo https://repo.wener.me/alpine/v3.10/community | sudo tee -a /etc/apk/repositories
 ```
 
 ### dev
