@@ -8,8 +8,9 @@
 
 ```bash
 # Or manully setup repo
+VER=$(grep -o '\d\+\.\d\+' /etc/alpine-release)
 (cd /etc/apk/keys; sudo curl -LO https://repo.wener.me/alpine/wenermail@gmail.com-5dc8c7cd.rsa.pub )
-echo https://repo.wener.me/alpine/v3.10/community | sudo tee -a /etc/apk/repositories
+echo https://repo.wener.me/alpine/v${VER}/community | sudo tee -a /etc/apk/repositories
 
 # Or using https://github.com/wenerme/alpine-admin to setup repo
 ansible-playbook adhoc.yaml -e 'task=wener-repo' -l myhost
@@ -22,5 +23,5 @@ ansible-playbook adhoc.yaml -e 'task=wener-repo' -l myhost
 ansible-playbook adhoc.yaml -e 'role=dev task=builder-create facts=true host_data_path=/data/build' -l hostwithdocker
 
 # copy build files
-rsync -avz packages/ alpine/v3.10/
+rsync -avz ~/packages/ alpine/v3.11/
 ```
