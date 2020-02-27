@@ -55,9 +55,21 @@ adduser $(whoami) abuild
 rsync -avz aports/community/grpc proxy:~/aports/
 
 # pull distfiles in proxy server
-cd ~/aports/grpc
-abuild checksum
+ssh proxy 'cd ~/aports/grpc; abuild checksum'
 
 # pull back distfiles
 rsync -avz proxy:/var/cache/distfiles/ distfiles/
+
+# remote-checksum <server> <pkg>
+remote-checksum(){
+    local svr=$1
+    local pkg=$2
+    
+    [ -e aports/community/$pkg ] && rsync -avzP aports/community/$pkg $svr:~/aports/
+    [ -e aports/main/$pkg ] && rsync -avzP aports/community/$pkg $svr:~/aports/
+    [ -e aports/testing/$pkg ] && rsync -avzP aports/community/$pkg $svr:~/aports/
+
+    ssh $svr "cd ~/aports/$pkg; abuild checksum"
+    rsync -avzP $svr:/var/cache/distfiles/ distfiles/
+}
 ```
