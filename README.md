@@ -41,7 +41,7 @@ ssh admin@127.0.0.1 -p 2222
 docker exec -it -u admin -w /opt/build build-server bash
 
 # copy build files
-rsync -avz ~/packages/ alpine/v3.11/
+rsync -avz packages/ alpine/v3.11/
 ```
 
 ### pull distfiles by proxy server
@@ -64,10 +64,10 @@ rsync -avz proxy:/var/cache/distfiles/ distfiles/
 remote-checksum(){
     local svr=$1
     local pkg=$2
-    
+
     [ -e aports/community/$pkg ] && rsync -avzP aports/community/$pkg $svr:~/aports/
-    [ -e aports/main/$pkg ] && rsync -avzP aports/community/$pkg $svr:~/aports/
-    [ -e aports/testing/$pkg ] && rsync -avzP aports/community/$pkg $svr:~/aports/
+    [ -e aports/main/$pkg ] && rsync -avzP aports/main/$pkg $svr:~/aports/
+    [ -e aports/testing/$pkg ] && rsync -avzP aports/testing/$pkg $svr:~/aports/
 
     ssh $svr "cd ~/aports/$pkg; abuild checksum"
     rsync -avzP $svr:/var/cache/distfiles/ distfiles/
