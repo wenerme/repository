@@ -7,12 +7,15 @@
 * Packages not in mainline version or version is outdated
 
 ```bash
-# Or manully setup repo
+# manully setup
+# setup key - or use --allowed-untrusted when apk add
 VER=$(egrep -o '^\d+[.]\d+' /etc/alpine-release)
 (cd /etc/apk/keys; sudo curl -LO https://repo.wener.me/alpine/wenermail@gmail.com-5dc8c7cd.rsa.pub )
+# add repo
 echo https://repo.wener.me/alpine/v${VER}/community | sudo tee -a /etc/apk/repositories
+echo https://repo.wener.me/alpine/v${VER}/main | sudo tee -a /etc/apk/repositories
 
-# Or using https://github.com/wenerme/alpine-admin to setup repo
+# setup by ansible for a lot of hosts - https://github.com/wenerme/alpine-admin
 ansible-playbook adhoc.yaml -e 'task=wener-repo' -l myhost
 ```
 
