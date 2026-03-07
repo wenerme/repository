@@ -3,6 +3,19 @@
 * CDN URL [https://repo.wener.me](https://repo.wener.me)
 * RAW URL [https://raw.githubusercontent.com/wenerme/repository/master](https://raw.githubusercontent.com/wenerme/repository/master)
 
+## Homebrew
+
+```bash
+brew tap wenerme/repository
+brew install --build-from-source wenerme/repository/tinc-pre
+```
+
+### Formulae
+
+| Formula | Description |
+|---------|-------------|
+| tinc-pre | tinc 1.1pre18 with Dijkstra weight-optimal routing and ConnectTo connection protection |
+
 ## Alpine
 * Packages not in mainline version or version is outdated
 
