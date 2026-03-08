@@ -8,7 +8,9 @@ class TincPre < Formula
   depends_on "lzo"
   depends_on "openssl"
 
-  # Dijkstra routing + ConnectTo protection + macOS fixes
+  # Dijkstra weight-optimal routing (cumulative weighted_distance)
+  # ConnectTo connection protection
+  # macOS ifreq compatibility fix
   patch :DATA
 
   def install
@@ -49,25 +51,35 @@ index d25d65e..b5ff3f6 100644
  		}
  
 diff --git a/src/graph.c b/src/graph.c
-index a774eac..0c36be2 100644
+index a774eac..221e06d 100644
 --- a/src/graph.c
 +++ b/src/graph.c
-@@ -179,13 +179,13 @@ static void sssp_bfs(void) {
+@@ -142,6 +142,7 @@ static void sssp_bfs(void) {
+ 	myself->prevedge = NULL;
+ 	myself->via = myself;
+ 	myself->distance = 0;
++	myself->weighted_distance = 0;
+ 	list_insert_head(todo_list, myself);
+ 
+ 	/* Loop while todo_list is filled */
+@@ -179,14 +180,15 @@ static void sssp_bfs(void) {
  
  			if(e->to->status.visited
  			                && (!e->to->status.indirect || indirect)
 -			                && (e->to->distance != n->distance + 1 || e->weight >= e->to->prevedge->weight)) {
-+			                && e->weight >= e->to->prevedge->weight) {
++			                && e->to->weighted_distance <= n->weighted_distance + e->weight) {
  				continue;
  			}
  
  			// Only update nexthop if it doesn't increase the path length
  
 -			if(!e->to->status.visited || (e->to->distance == n->distance + 1 && e->weight >= e->to->prevedge->weight)) {
-+			if(!e->to->status.visited || e->weight < e->to->prevedge->weight) {
++			if(!e->to->status.visited || e->to->weighted_distance > n->weighted_distance + e->weight) {
  				e->to->nexthop = (n->nexthop == myself) ? e->to : n->nexthop;
++				e->to->weighted_distance = n->weighted_distance + e->weight;
  			}
  
+ 			e->to->status.visited = true;
 diff --git a/src/net.h b/src/net.h
 index cf0ddc7..c6f45a7 100644
 --- a/src/net.h
@@ -114,3 +126,15 @@ index 206321c..85a928c 100644
  			list_insert_tail(outgoing_list, outgoing);
  			setup_outgoing_connection(outgoing, true);
  		}
+diff --git a/src/node.h b/src/node.h
+index 1b33789..02369f2 100644
+--- a/src/node.h
++++ b/src/node.h
+@@ -73,6 +73,7 @@ typedef struct node_t {
+ 	int outcompression;                     /* Compressionlevel, 0 = no compression */
+ 
+ 	int distance;
++	int weighted_distance;
+ 	struct node_t *nexthop;                 /* nearest node from us to him */
+ 	struct edge_t *prevedge;                /* nearest node from him to us */
+ 	struct node_t *via;                     /* next hop for UDP packets */
