@@ -10,19 +10,26 @@ class TincPre < Formula
 
   # ConnectTo connection protection with dynamic threshold
   # macOS ifreq compatibility fix
-  # NOTE: use patch :p1 with DATA but apply via git to avoid gpatch 2.7.6 "out of memory" bug
+  patch :DATA
 
   def install
-    # Write embedded patch to file and apply with git (gpatch 2.7.6 has bug with this diff)
-    patch_content = (buildpath/"tinc.patch")
-    patch_content.write DATA.read
-    system "git", "init", "-q"
-    system "git", "add", "."
-    system "git", "commit", "-q", "-m", "init"
-    system "git", "apply", "tinc.patch"
-    patch_content.unlink
-
     ENV.append "CFLAGS", "-Wno-incompatible-function-pointer-types"
+
+    # Workaround: gpatch 2.7.6 (Homebrew) has "out of memory" bug and may
+    # silently skip the do_autoconnect() hunk. Apply it manually if missing.
+    ac = "src/autoconnect.c"
+    unless File.read(ac).include?("min_connections")
+      ohai "Applying do_autoconnect threshold fix (gpatch workaround)"
+      inreplace ac, "void do_autoconnect() {\n\t/* Count number of active connections. */\n\tint nc = 0;",
+                    "void do_autoconnect() {\n\t/* Count number of active connections and ConnectTo connections. */\n\tint nc = 0;\n\tint connectto_count = 0;"
+      inreplace ac, "if(c->edge) {\n\t\t\tnc++;\n\t\t}",
+                    "if(c->edge) {\n\t\t\tnc++;\n\t\t\tif(c->outgoing && c->outgoing->from_connectto)\n\t\t\t\tconnectto_count++;\n\t\t}"
+      inreplace ac, "\t/* Less than 3 connections? Eagerly try to make a new one. */\n\tif(nc < 3) {",
+                    "\tint min_connections = connectto_count > 3 ? connectto_count : 3;\n\n\t/* Less than min_connections? Eagerly try to make a new one. */\n\tif(nc < min_connections) {"
+      inreplace ac, "\t/* More than 3 connections? See if we can get rid of a superfluous one. */\n\tif(nc > 3) {",
+                    "\t/* More than min_connections? See if we can get rid of a superfluous one. */\n\tif(nc > min_connections) {"
+    end
+
     system "./configure", "--prefix=#{prefix}", "--sysconfdir=#{etc}",
                           "--with-openssl=#{Formula["openssl"].opt_prefix}"
     system "make", "install"
