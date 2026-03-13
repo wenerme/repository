@@ -8,8 +8,8 @@ class TincPre < Formula
   depends_on "lzo"
   depends_on "openssl"
 
-  # Dijkstra weight-optimal routing (cumulative weighted_distance)
-  # ConnectTo connection protection
+  # ConnectTo connection protection with dynamic threshold
+  # ConnectTo connection protection with dynamic threshold
   # macOS ifreq compatibility fix
   patch :DATA
 
@@ -27,7 +27,7 @@ end
 
 __END__
 diff --git a/src/autoconnect.c b/src/autoconnect.c
-index d25d65e..b5ff3f6 100644
+index d25d65e..969b049 100644
 --- a/src/autoconnect.c
 +++ b/src/autoconnect.c
 @@ -114,7 +114,8 @@ static void drop_superfluous_outgoing_connection() {
@@ -50,36 +50,40 @@ index d25d65e..b5ff3f6 100644
  			continue;
  		}
  
-diff --git a/src/graph.c b/src/graph.c
-index a774eac..221e06d 100644
---- a/src/graph.c
-+++ b/src/graph.c
-@@ -142,6 +142,7 @@ static void sssp_bfs(void) {
- 	myself->prevedge = NULL;
- 	myself->via = myself;
- 	myself->distance = 0;
-+	myself->weighted_distance = 0;
- 	list_insert_head(todo_list, myself);
+@@ -166,23 +168,28 @@ static void drop_superfluous_pending_connections() {
+ }
  
- 	/* Loop while todo_list is filled */
-@@ -179,14 +180,15 @@ static void sssp_bfs(void) {
+ void do_autoconnect() {
+-	/* Count number of active connections. */
++	/* Count number of active connections and ConnectTo connections. */
+ 	int nc = 0;
++	int connectto_count = 0;
  
- 			if(e->to->status.visited
- 			                && (!e->to->status.indirect || indirect)
--			                && (e->to->distance != n->distance + 1 || e->weight >= e->to->prevedge->weight)) {
-+			                && e->to->weighted_distance <= n->weighted_distance + e->weight) {
- 				continue;
- 			}
+ 	for list_each(connection_t, c, connection_list) {
+ 		if(c->edge) {
+ 			nc++;
++			if(c->outgoing && c->outgoing->from_connectto)
++				connectto_count++;
+ 		}
+ 	}
  
- 			// Only update nexthop if it doesn't increase the path length
+-	/* Less than 3 connections? Eagerly try to make a new one. */
+-	if(nc < 3) {
++	int min_connections = connectto_count > 3 ? connectto_count : 3;
++
++	/* Less than min_connections? Eagerly try to make a new one. */
++	if(nc < min_connections) {
+ 		make_new_connection();
+ 		return;
+ 	}
  
--			if(!e->to->status.visited || (e->to->distance == n->distance + 1 && e->weight >= e->to->prevedge->weight)) {
-+			if(!e->to->status.visited || e->to->weighted_distance > n->weighted_distance + e->weight) {
- 				e->to->nexthop = (n->nexthop == myself) ? e->to : n->nexthop;
-+				e->to->weighted_distance = n->weighted_distance + e->weight;
- 			}
+-	/* More than 3 connections? See if we can get rid of a superfluous one. */
+-	if(nc > 3) {
++	/* More than min_connections? See if we can get rid of a superfluous one. */
++	if(nc > min_connections) {
+ 		drop_superfluous_outgoing_connection();
+ 	}
  
- 			e->to->status.visited = true;
 diff --git a/src/net.h b/src/net.h
 index cf0ddc7..c6f45a7 100644
 --- a/src/net.h
@@ -126,15 +130,3 @@ index 206321c..85a928c 100644
  			list_insert_tail(outgoing_list, outgoing);
  			setup_outgoing_connection(outgoing, true);
  		}
-diff --git a/src/node.h b/src/node.h
-index 1b33789..02369f2 100644
---- a/src/node.h
-+++ b/src/node.h
-@@ -73,6 +73,7 @@ typedef struct node_t {
- 	int outcompression;                     /* Compressionlevel, 0 = no compression */
- 
- 	int distance;
-+	int weighted_distance;
- 	struct node_t *nexthop;                 /* nearest node from us to him */
- 	struct edge_t *prevedge;                /* nearest node from him to us */
- 	struct node_t *via;                     /* next hop for UDP packets */
