@@ -9,11 +9,19 @@ class TincPre < Formula
   depends_on "openssl"
 
   # ConnectTo connection protection with dynamic threshold
-  # ConnectTo connection protection with dynamic threshold
   # macOS ifreq compatibility fix
-  patch :DATA
+  # NOTE: use patch :p1 with DATA but apply via git to avoid gpatch 2.7.6 "out of memory" bug
 
   def install
+    # Write embedded patch to file and apply with git (gpatch 2.7.6 has bug with this diff)
+    patch_content = (buildpath/"tinc.patch")
+    patch_content.write DATA.read
+    system "git", "init", "-q"
+    system "git", "add", "."
+    system "git", "commit", "-q", "-m", "init"
+    system "git", "apply", "tinc.patch"
+    patch_content.unlink
+
     ENV.append "CFLAGS", "-Wno-incompatible-function-pointer-types"
     system "./configure", "--prefix=#{prefix}", "--sysconfdir=#{etc}",
                           "--with-openssl=#{Formula["openssl"].opt_prefix}"
