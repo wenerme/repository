@@ -2,9 +2,9 @@
 class TincPre < Formula
   desc "Virtual Private Network (VPN) tool"
   homepage "https://www.tinc-vpn.org/"
-  url "https://github.com/wenerme/tinc/archive/573ab11543df5e18c720e930f596f9ab837b3012.tar.gz"
+  url "https://github.com/wenerme/tinc/archive/9f8c4f415d35b33342f40ff35b52f0d3e4681fab.tar.gz"
   version "1.1pre18"
-  sha256 "9e53603b3325dbc800a99b89d44ca2c2fab7cf08089bd46ec2a3550043c21b2a"
+  sha256 "9d8a49321c733e0e18d548642fe2a6c13e32781c9a75f45f6ef0a83ade636842"
 
   depends_on "meson" => :build
   depends_on "ninja" => :build
@@ -15,7 +15,8 @@ class TincPre < Formula
   depends_on "zlib"
 
   # All patches (ConnectTo protection, dynamic autoconnect threshold,
-  # macOS ifreq fix, lzo include path fix) are in the source repo.
+  # EWMA edge weights, macOS ifreq fix, lzo include path fix) are in
+  # the source repo.
 
   def install
     args = %W[
